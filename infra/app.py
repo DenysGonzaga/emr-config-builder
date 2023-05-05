@@ -3,10 +3,10 @@ import os
 
 import aws_cdk as cdk
 
-from ecb.ecb_config import EmrConfigBuild
+from aws_ecb.infra import EmrConfigBuilder
 
 
 app = cdk.App()
-EmrConfigBuild(app, "EmrConfigBuild")
+EmrConfigBuilder(app, "EmrConfigBuilder")
 
 app.synth()

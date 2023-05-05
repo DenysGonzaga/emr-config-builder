@@ -1,17 +1,14 @@
 [tool.poetry]
-name = "emr-config-build-infra"
+name = "emr-config-builder-infra"
 version = "0.0.1"
 description = "IaC for EMR config Build"
 authors = ["Denys Gonzaga <denys.gonzaga@proton.me>"]
 license = "MIT"
-readme = "README.md"
-packages = [{include = "emr_config_build_infra"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
 aws-cdk-lib = "2.72.1"
 pytest = "6.2.5"
-
 
 [build-system]
 requires = ["poetry-core"]
