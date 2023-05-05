@@ -1,9 +1,10 @@
 from aws_cdk import (
     Duration,
     Stack,
-    aws_dynamodb as dynamodb,
-    aws_lambda as lambda_,
-    aws_iam as iam
+    aws_dynamodb   as dynamodb,
+    aws_lambda     as lambda_,
+    aws_iam        as iam,
+    aws_apigateway as api_gateway 
 )
 from constructs import Construct
 
@@ -65,5 +66,12 @@ class EmrConfigBuilder(Stack):
         
 
     def build_apis(self):
-        pass
+        self.backend_api = api_gateway.LambdaRestApi(self, "ECBConfigRestApi",
+            rest_api_name="api_ecb_config",
+            deploy=True,
+            proxy=False,
+            handler=self.api_lambda
+        )
+        rsconfig = self.backend_api.root.add_resource("config")
+        rsconfig.add_method("GET")
 
