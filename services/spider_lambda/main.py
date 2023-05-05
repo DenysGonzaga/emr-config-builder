@@ -47,7 +47,7 @@ def handler(event, context):
                     instance_data[table.find_all('td')[row].text] = table.find_all('td')[
                         row + 1].text
 
-            instance_data["yarn_cores"] = None
+            instance_data["yarn.cores"] = None
             instances[instance] = instance_data
 
         logger.info(
@@ -67,7 +67,7 @@ def handler(event, context):
                     inst_vcpu = splited_line[2]
 
                     if inst_type in instances:
-                        instances[inst_type]["yarn_cores"] = int(inst_vcpu)
+                        instances[inst_type]["yarn.cores"] = int(inst_vcpu)
    
         table = dynamodb.Table(table_name)
         with table.batch_writer() as batch:

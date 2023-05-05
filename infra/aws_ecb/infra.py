@@ -29,7 +29,7 @@ class EmrConfigBuilder(Stack):
             partition_key=dynamodb.Attribute(name="category", type=dynamodb.AttributeType.STRING),
             sort_key=dynamodb.Attribute(name="key", type=dynamodb.AttributeType.STRING),
             billing_mode=dynamodb.BillingMode.PROVISIONED,
-            removal_policy=RemovalPolicy.DESTROY
+            removal_policy=RemovalPolicy.DESTROY            
         )
         self.metadata_table.auto_scale_write_capacity(
             min_capacity=5,
@@ -39,10 +39,13 @@ class EmrConfigBuilder(Stack):
 
     def build_lambda_functions(self):
         # Create Backend function to connect API and metadata table
-        self.backend_lambda =  lambda_.DockerImageFunction(self, "ECBApiLambda",
-                                        function_name="ecb_api_lambda",
+        self.backend_lambda =  lambda_.DockerImageFunction(self, "ECBBackendLambda",
+                                        function_name="ecb_backend_lambda",
                                         memory_size=128,
-                                        code=lambda_.DockerImageCode.from_image_asset("../services/backend_lambda"))
+                                        code=lambda_.DockerImageCode.from_image_asset("../services/backend_lambda"),
+                                        environment={
+                                            "DYN_TABLE_NAME": self.metadata_table.table_name,
+                                        })
         self.backend_lambda.apply_removal_policy(RemovalPolicy.DESTROY)
         self.backend_lambda.add_to_role_policy(iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
@@ -60,14 +63,13 @@ class EmrConfigBuilder(Stack):
         self.spider_function =  lambda_.DockerImageFunction(self, "ECBInstanceSpiderFunction",
                                 function_name="ecb_instance_spider",
                                 memory_size=256,
+                                timeout=Duration.minutes(3),
+                                code=lambda_.DockerImageCode.from_image_asset("../services/spider_lambda"),
                                 environment={
                                     "YARN_DATA_URL": "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-hadoop-task-config.html",
                                     "CORES_DATA_URL": "https://aws.amazon.com/pt/ec2/instance-types/",
                                     "DYN_TABLE_NAME": self.metadata_table.table_name,
-                                },
-                                timeout=Duration.minutes(3),
-                                code=lambda_.DockerImageCode.from_image_asset("../services/spider_lambda"))
-        
+                                })        
         
         self.spider_function.apply_removal_policy(RemovalPolicy.DESTROY)
         self.spider_function.add_to_role_policy(iam.PolicyStatement(
@@ -85,8 +87,8 @@ class EmrConfigBuilder(Stack):
 
     def build_apis(self):
         # Create AGW api rest to serve as a interface between backend and the api user
-        self.rest_api = api_gateway.LambdaRestApi(self, "ECBConfigRestApi",
-            rest_api_name="api_ecb_config",            
+        self.rest_api = api_gateway.LambdaRestApi(self, "ECBRestApi",
+            rest_api_name="ecb_api",            
             deploy=True,
             proxy=False,
             handler=self.backend_lambda
