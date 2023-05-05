@@ -23,6 +23,7 @@ class EmrConfigBuilder(Stack):
 
 
     def build_tables(self):
+        # Create Metadata Table to store whole data regarding instance informations
         self.metadata_table = dynamodb.Table(self, "ECBMetadataTable",
             table_name="ecb_metadata_table",
             partition_key=dynamodb.Attribute(name="category", type=dynamodb.AttributeType.STRING),
@@ -37,12 +38,25 @@ class EmrConfigBuilder(Stack):
 
 
     def build_lambda_functions(self):
+        # Create Backend function to connect API and metadata table
         self.backend_lambda =  lambda_.DockerImageFunction(self, "ECBApiLambda",
                                         function_name="ecb_api_lambda",
                                         memory_size=128,
                                         code=lambda_.DockerImageCode.from_image_asset("../services/backend_lambda"))
         self.backend_lambda.apply_removal_policy(RemovalPolicy.DESTROY)
+        self.backend_lambda.add_to_role_policy(iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[                    
+                    "dynamodb:GetItem",
+                    "dynamodb:Query",
+                    "dynamodb:Scan"
+                ],
+                resources=[
+                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/{self.metadata_table.table_name}",
+                ],
+            ))
         
+        # Create Spider function to crawl instances data
         self.spider_function =  lambda_.DockerImageFunction(self, "ECBInstanceSpiderFunction",
                                 function_name="ecb_instance_spider",
                                 memory_size=256,
@@ -53,14 +67,12 @@ class EmrConfigBuilder(Stack):
                                 },
                                 timeout=Duration.minutes(3),
                                 code=lambda_.DockerImageCode.from_image_asset("../services/spider_lambda"))
+        
+        
         self.spider_function.apply_removal_policy(RemovalPolicy.DESTROY)
         self.spider_function.add_to_role_policy(iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=[
-                    "dynamodb:BatchGetItem",
-                    "dynamodb:GetItem",
-                    "dynamodb:Query",
-                    "dynamodb:Scan",
                     "dynamodb:BatchWriteItem",
                     "dynamodb:PutItem",
                     "dynamodb:UpdateItem"
@@ -72,6 +84,7 @@ class EmrConfigBuilder(Stack):
         
 
     def build_apis(self):
+        # Create AGW api rest to serve as a interface between backend and the api user
         self.rest_api = api_gateway.LambdaRestApi(self, "ECBConfigRestApi",
             rest_api_name="api_ecb_config",            
             deploy=True,
@@ -85,6 +98,7 @@ class EmrConfigBuilder(Stack):
 
 
     def build_rules(self):
+        # Create CRON Rules to update metadata periodically
         self.spider_cron_rule = events.Rule(self, 'ECBSpiderCronRule',
                                             schedule= events.Schedule.expression("cron(0 5 * * ? *)"))
         self.spider_cron_rule.add_target(targets.LambdaFunction(self.spider_function, retry_attempts=2))
