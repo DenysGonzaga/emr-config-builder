@@ -2,6 +2,8 @@ from aws_cdk import (
     Duration,
     Stack,
     aws_dynamodb as dynamodb,
+    aws_lambda as lambda_,
+    aws_iam as iam
 )
 from constructs import Construct
 
@@ -27,7 +29,37 @@ class EmrConfigBuilder(Stack):
 
 
     def build_lambda_functions(self):
-        pass
+        self.api_lambda =  lambda_.DockerImageFunction(self, "ECBApiLambda",
+                                        function_name="ecb_api_lambda",
+                                        memory_size=128,
+                                        code=lambda_.DockerImageCode.from_image_asset("../service/api_lambda"))
+        
+        self.load_lambda =  lambda_.DockerImageFunction(self, "ECBTableLoad",
+                                function_name="ecb_table_load",
+                                memory_size=256,
+                                environment={
+                                    "YARN_DATA_URL":"https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-hadoop-task-config.htm",
+                                    "CORES_DATA_URL":"https://aws.amazon.com/pt/ec2/instance-types/",
+                                    "DYN_TABLE_NAME": self.dyn_table.table_name,
+                                },
+                                code=lambda_.DockerImageCode.from_image_asset("../service/dynamo_load_lambda"))
+        
+        self.load_lambda.add_to_role_policy(iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "dynamodb:BatchGetItem",
+                    "dynamodb:GetItem",
+                    "dynamodb:Query",
+                    "dynamodb:Scan",
+                    "dynamodb:BatchWriteItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem"
+                ],
+                resources=[
+                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/{self.dyn_table.table_name}",
+                ],
+            ))
+        
 
     def build_apis(self):
         pass
