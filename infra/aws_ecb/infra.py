@@ -7,6 +7,7 @@ from aws_cdk import (
 )
 from constructs import Construct
 
+
 class EmrConfigBuilder(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
@@ -15,14 +16,15 @@ class EmrConfigBuilder(Stack):
         self.build_lambda_functions()
         self.build_apis()
 
+
     def build_tables(self):
-        self.dyn_table = dynamodb.Table(self, "ECBMetadataTable",
+        self.dyn_meta_table = dynamodb.Table(self, "ECBMetadataTable",
             table_name="ecb_metadata_table",
             partition_key=dynamodb.Attribute(name="category", type=dynamodb.AttributeType.STRING),
             sort_key=dynamodb.Attribute(name="key", type=dynamodb.AttributeType.STRING),
             billing_mode=dynamodb.BillingMode.PROVISIONED
         )
-        self.dyn_table.auto_scale_write_capacity(
+        self.dyn_meta_table.auto_scale_write_capacity(
             min_capacity=5,
             max_capacity=5
         ).scale_on_utilization(target_utilization_percent=75)
@@ -38,12 +40,13 @@ class EmrConfigBuilder(Stack):
                                 function_name="ecb_table_load",
                                 memory_size=256,
                                 environment={
-                                    "YARN_DATA_URL":"https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-hadoop-task-config.htm",
-                                    "CORES_DATA_URL":"https://aws.amazon.com/pt/ec2/instance-types/",
-                                    "DYN_TABLE_NAME": self.dyn_table.table_name,
+                                    "YARN_DATA_URL": "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-hadoop-task-config.html",
+                                    "CORES_DATA_URL": "https://aws.amazon.com/pt/ec2/instance-types/",
+                                    "DYN_TABLE_NAME": self.dyn_meta_table.table_name,
                                 },
+                                timeout=Duration.minutes(3),
                                 code=lambda_.DockerImageCode.from_image_asset("../service/dynamo_load_lambda"))
-        
+
         self.load_lambda.add_to_role_policy(iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=[
@@ -56,7 +59,7 @@ class EmrConfigBuilder(Stack):
                     "dynamodb:UpdateItem"
                 ],
                 resources=[
-                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/{self.dyn_table.table_name}",
+                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/{self.dyn_meta_table.table_name}",
                 ],
             ))
         

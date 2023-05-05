@@ -68,7 +68,7 @@ def handler(event, context):
 
                     if inst_type in instances:
                         instances[inst_type]["yarn_cores"] = int(inst_vcpu)
-
+   
         table = dynamodb.Table(table_name)
         with table.batch_writer() as batch:
             for inst in instances:
