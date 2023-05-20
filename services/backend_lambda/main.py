@@ -66,11 +66,11 @@ def get_handler(data):
 
     if master_instance.get('yarn.cores') is None and \
             master_yarn_cores is None:
-        return default_response({"Response": "Master yarn.cores at database is null, please change instance type or set"
+        return default_response({"Response": "Master yarn.cores at database is null, please change instance type or set "
                                 "master_yarn_cores parameter on your request."}, 400)
 
     if node_instance.get('yarn.cores') is not None:
-        node_yarn_cores = node_instance.get('yarn.cores')
+        node_yarn_cores = int(node_instance.get('yarn.cores'))
 
     if node_instance.get('yarn.cores') is None and \
             node_yarn_cores is None:
@@ -78,7 +78,7 @@ def get_handler(data):
                                 "instance type or set node_yarn_cores parameter on your request."}, 400)
 
     # Consistency validations
-    if node_yarn_cores < cores_by_executor:
+    if int(node_yarn_cores) < cores_by_executor:
         return default_response({"Response": "cores_by_executor must be equal or lower than node_yarn_cores. Try either change parameter, instance type or node_yarn_cores value."}, 400)
 
     # Building configs
