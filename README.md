@@ -20,10 +20,11 @@ All variable calculations are based on this AWS [paper](https://aws.amazon.com/p
 
 ## Starting
 
-Set you AWS environment.
+Set you AWS CLI environment.
 ```
 aws configure
 ```
+Do you don't know how to configure your AWS CLI Environment? Check [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html).
 
 Init poetry to create virtual env and install dependencies.
 ```
