@@ -33,7 +33,7 @@ def get_dbitem(key):
 
 
 def post_handler(data):
-    return {}
+    return data
 
 
 def get_handler(data):
@@ -122,13 +122,13 @@ def get_handler(data):
             "spark.dynamicAllocation.enabled": "false",
             "spark.driver.memory": "{}M".format(spark_driver_memory),
             "spark.executor.memory": "{}M".format(spark_executors_memory),
-            "spark.executor.cores": int(spark_driver_cores),
-            "spark.executor.instances": spark_executor_instances + 1,
+            "spark.executor.cores": str(spark_driver_cores),
+            "spark.executor.instances": str(spark_executor_instances + 1),
             "spark.executor.memoryOverhead": "{}M".format(spark_executor_memoryOverhead),
             "spark.driver.memoryOverhead": "{}M".format(spark_driver_memoryOverhead),
             "spark.executor.extraJavaOptions": "-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'",
             "spark.driver.extraJavaOptions": "-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'",
-            "spark.default.parallelism": spark_default_parallelism,
+            "spark.default.parallelism": str(spark_default_parallelism),
             "spark.serializer": "org.apache.spark.serializer.KryoSerializer"
         }
     },

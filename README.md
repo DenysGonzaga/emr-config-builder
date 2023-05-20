@@ -2,8 +2,11 @@
 
 UNDER CONSTRUCTION -> It can be changed over development process.
 
-The main objective of this project is an easy manner to create a simple rest API using AWS CDK and Python to generate EMR configurations based on this AWS [paper](https://aws.amazon.com/pt/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/). </br >
-It can be helpful when you run your EMR clusters and need to generate configurations on the fly using an API.
+## Objective
+
+An easy manner to generate Apache Spark optimized AWS EMR cluster configurations using a REST API.
+Service built using Python 3.11, Poetry, and AWS CDK.
+All variable calculations are based on this AWS [paper](https://aws.amazon.com/pt/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/). </br >
 
 ## Requirements
 
