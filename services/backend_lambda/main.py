@@ -2,9 +2,12 @@ import os
 import json
 import boto3
 import logging
+from datetime import datetime as dt
 
 dynamodb = boto3.resource('dynamodb')
 table_name = os.environ['DYN_TABLE_NAME']
+spider_lambda_name = os.environ['SPI_LBMDA_NAME']
+
 table = dynamodb.Table(table_name)
 
 logger = logging.getLogger()
@@ -48,45 +51,65 @@ def setOrUpdate_dbitem(item):
 
 def post_handler(data):
     logger.info("Processing post request.")
-    instance_type = data.get('instance.type')
-    rvalue = {
-        "mapreduce.map.java.opts" : data.get('mapreduce.map.java.opts'),
-        "mapreduce.map.memory.mb" : data.get('mapreduce.map.memory.mb'),
-        "mapreduce.reduce.java.opts" : data.get('mapreduce.reduce.java.opts'),
-        "mapreduce.reduce.memory.mb" : data.get('mapreduce.reduce.memory.mb'),
-        "yarn.app.mapreduce.am.resource.mb" : data.get('yarn.app.mapreduce.am.resource.mb'),
-        "yarn.cores" : data.get('yarn.cores'),
-        "yarn.nodemanager.resource.memory-mb" : data.get('yarn.nodemanager.resource.memory-mb'),
-        "yarn.scheduler.maximum-allocation-mb" : data.get('yarn.scheduler.maximum-allocation-mb'),
-        "yarn.scheduler.minimum-allocation-mb" : data.get('yarn.scheduler.minimum-allocation-mb')
-    }
+    update_database = data.get('update_database')
 
-    null_keys = []
-    if instance_type is None:
-        null_keys.append("instance.type")
+    if update_database is not None:
+        logger.info("Database force-fed mode.")
+        client = boto3.client('lambda')
+        try:
+            client.invoke(
+                FunctionName=spider_lambda_name,
+                InvocationType='Event'
+            )
+        except Exception as e:
+            m = f"Spider lambda invocation error. ERR: {str(e)}"
+            logger.error(m)
+            return default_response({"error": m}, 500)
 
-    for k, v in rvalue.items():
-        if v is None:
-            null_keys.append(str(k))
+        logger.info("Spider trigger activated.")
+        return default_response({"response": "Spide trigger activated."})
+    else:
+        logger.info("Database upsert mode.")
+        instance_type = data.get('instance.type')
+        rvalue = {
+            "mapreduce.map.java.opts" : data.get('mapreduce.map.java.opts'),
+            "mapreduce.map.memory.mb" : data.get('mapreduce.map.memory.mb'),
+            "mapreduce.reduce.java.opts" : data.get('mapreduce.reduce.java.opts'),
+            "mapreduce.reduce.memory.mb" : data.get('mapreduce.reduce.memory.mb'),
+            "yarn.app.mapreduce.am.resource.mb" : data.get('yarn.app.mapreduce.am.resource.mb'),
+            "yarn.cores" : data.get('yarn.cores'),
+            "yarn.nodemanager.resource.memory-mb" : data.get('yarn.nodemanager.resource.memory-mb'),
+            "yarn.scheduler.maximum-allocation-mb" : data.get('yarn.scheduler.maximum-allocation-mb'),
+            "yarn.scheduler.minimum-allocation-mb" : data.get('yarn.scheduler.minimum-allocation-mb')
+        }
 
-    if len(null_keys) > 0:
-        str_nk = ', '.join(null_keys)
-        w = "is" if len(null_keys) == 1 else "are"
-        return default_response({"response": f"Post method must have all properties: '{str_nk}' {w} None."}, 400)
-    
-    try:
-        int(rvalue.get("yarn.cores"))
-    except:
-        return default_response({"response": "Parameter 'yarn.cores' must be integer."}, 400)
+        null_keys = []
+        if instance_type is None:
+            null_keys.append("instance.type")
 
+        for k, v in rvalue.items():
+            if v is None:
+                null_keys.append(str(k))
 
-    setOrUpdate_dbitem({
-        "category": "instance_data",
-        "key": instance_type,
-        "value": rvalue
-    })
+        if len(null_keys) > 0:
+            str_nk = ', '.join(null_keys)
+            w = "is" if len(null_keys) == 1 else "are"
+            return default_response({"response": f"Post method must have all properties: '{str_nk}' {w} None."}, 400)
+        
+        try:
+            int(rvalue.get("yarn.cores"))
+        except:
+            return default_response({"response": "Parameter 'yarn.cores' must be integer."}, 400)
 
-    return default_response({"response": "Database item upserted."})
+        processed_dt = int((dt.now() - dt(1970,1,1)).total_seconds())
+        setOrUpdate_dbitem({
+            "category": "instance_data",
+            "key": instance_type,
+            "value": rvalue,
+            "processed_dt": processed_dt            
+        })
+
+        return default_response({"response": "Database item upserted."})
 
 
 def get_handler(data):

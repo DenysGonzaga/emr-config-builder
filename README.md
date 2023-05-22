@@ -46,3 +46,14 @@ poetry run cdk deploy
 ## Design
 
 ![image](./assets/design/emr_config_builder.png)
+
+## How to Request 
+
+## Configuration (TODO: dynaconf)
+
+### Get : Generate EMR Config
+
+### Post : Force-fed database 
+
+### Post : Upsert instance data
+

@@ -37,30 +37,7 @@ class EmrConfigBuilder(Stack):
         ).scale_on_utilization(target_utilization_percent=75)
 
 
-    def build_lambda_functions(self):
-        # Create Backend function to connect API and metadata table
-        self.backend_lambda =  lambda_.DockerImageFunction(self, "ECBBackendLambda",
-                                        function_name="ecb_backend_lambda",
-                                        memory_size=128,
-                                        code=lambda_.DockerImageCode.from_image_asset("../services/backend_lambda"),
-                                        environment={
-                                            "DYN_TABLE_NAME": self.metadata_table.table_name,
-                                        })
-        self.backend_lambda.apply_removal_policy(RemovalPolicy.DESTROY)
-        self.backend_lambda.add_to_role_policy(iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[                    
-                    "dynamodb:GetItem",
-                    "dynamodb:Query",
-                    "dynamodb:Scan",
-                    "dynamodb:BatchWriteItem",
-                    "dynamodb:PutItem",
-                    "dynamodb:UpdateItem"
-                ],
-                resources=[
-                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/{self.metadata_table.table_name}",
-                ],
-            ))
+    def build_lambda_functions(self):      
         
         # Create Spider function to crawl instances data
         self.spider_function =  lambda_.DockerImageFunction(self, "ECBInstanceSpiderFunction",
@@ -75,15 +52,47 @@ class EmrConfigBuilder(Stack):
                                 })        
         
         self.spider_function.apply_removal_policy(RemovalPolicy.DESTROY)
+        # Dynamodb permissions
         self.spider_function.add_to_role_policy(iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=[
-                    "dynamodb:BatchWriteItem",
+                    "dynamodb:BatchWriteItem"
+                ],
+                resources=[
+                    f"arn:aws:dynamodb:{self.region}:{self.account}:table/{self.metadata_table.table_name}",
+                ],
+            ))
+        
+        # Create Backend function to connect API and metadata table
+        self.backend_lambda =  lambda_.DockerImageFunction(self, "ECBBackendLambda",
+                                        function_name="ecb_backend_lambda",
+                                        memory_size=128,
+                                        code=lambda_.DockerImageCode.from_image_asset("../services/backend_lambda"),
+                                        environment={
+                                            "DYN_TABLE_NAME": self.metadata_table.table_name,
+                                            "SPI_LBMDA_NAME": self.spider_function.function_name
+                                        })
+        self.backend_lambda.apply_removal_policy(RemovalPolicy.DESTROY)
+        # Dynamodb permissions
+        self.backend_lambda.add_to_role_policy(iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[                    
+                    "dynamodb:GetItem",
                     "dynamodb:PutItem",
                     "dynamodb:UpdateItem"
                 ],
                 resources=[
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/{self.metadata_table.table_name}",
+                ],
+            ))
+        # Lambda permissions
+        self.backend_lambda.add_to_role_policy(iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[                    
+                    "lambda:InvokeFunction"
+                ],
+                resources=[
+                    f"arn:aws:lambda:{self.region}:{self.account}:function:{self.spider_function.function_name}",
                 ],
             ))
         

@@ -4,6 +4,7 @@ import boto3
 import requests
 import logging
 import functools as fn
+from datetime import datetime as dt
 from bs4 import BeautifulSoup
 
 logger = logging.getLogger()
@@ -80,10 +81,12 @@ def handler(event, context):
                         instances[inst_type]["yarn.cores"] = int(inst_vcpu)
    
         table = dynamodb.Table(table_name)
+        processed_dt = int((dt.now() - dt(1970,1,1)).total_seconds())
         with table.batch_writer() as batch:
             for k, v in instances.items():
                 batch.put_item(Item={"category": "instance_data",
-                                     "key": k, "value": v})
+                                     "key": k, "value": v,
+                                     "processed_dt": processed_dt})
 
         logger.info("Database updated.")
         default_response({"response": "Database updated."})
