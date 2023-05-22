@@ -17,9 +17,17 @@ logger.addHandler(sh)
 yarn_data_url = os.environ['YARN_DATA_URL']
 cores_data_url = os.environ['CORES_DATA_URL']
 table_name = os.environ['DYN_TABLE_NAME']
-cluster_with_hbase = False
+
 
 dynamodb = boto3.resource('dynamodb')
+
+
+def default_response(body, statusCode=200):
+    return {
+        'statusCode': statusCode,
+        'body': json.dumps(body),
+        'headers': {'Content-Type': 'application/json'},
+    }
 
 
 def handler(event, context):
@@ -41,7 +49,9 @@ def handler(event, context):
             if len(table.find_all('th')) == 4:
                 for row in range(0, len(table.find_all('td')), 3):
                     instance_data[table.find_all('td')[row].text] = table.find_all('td')[
-                        row + (2 if cluster_with_hbase else 1)].text
+                        #TODO: hbase handler 
+                        #row + (2 if cluster_with_hbase else 1)
+                        row + 2].text
             else:
                 for row in range(0, len(table.find_all('td')), 2):
                     instance_data[table.find_all('td')[row].text] = table.find_all('td')[
@@ -71,12 +81,12 @@ def handler(event, context):
    
         table = dynamodb.Table(table_name)
         with table.batch_writer() as batch:
-            for inst in instances:
-                i = instances[inst]
+            for k, v in instances.items():
                 batch.put_item(Item={"category": "instance_data",
-                                     "key": inst, "value": i})
+                                     "key": k, "value": v})
 
-        return {"status": 200}
+        logger.info("Database updated.")
+        default_response({"response": "Database updated."})
     except Exception as e:
         logger.error(str(e))
-        return {"status": 404, "exception": str(e)}
+        default_response({"error": str(e)}, statusCode=404)

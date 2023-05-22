@@ -5,8 +5,11 @@ UNDER CONSTRUCTION -> It can be changed over development process.
 ## Objective
 
 An easy manner to generate Apache Spark optimized AWS EMR cluster configurations using a REST API.
+
 Service built using Python 3.11, Poetry, and AWS CDK.
-All variable calculations are based on this AWS [paper](https://aws.amazon.com/pt/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/). </br >
+
+All variable calculations are based on this AWS [paper](https://aws.amazon.com/pt/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/). 
+
 
 ## Requirements
 

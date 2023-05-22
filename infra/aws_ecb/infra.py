@@ -52,7 +52,10 @@ class EmrConfigBuilder(Stack):
                 actions=[                    
                     "dynamodb:GetItem",
                     "dynamodb:Query",
-                    "dynamodb:Scan"
+                    "dynamodb:Scan",
+                    "dynamodb:BatchWriteItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem"
                 ],
                 resources=[
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/{self.metadata_table.table_name}",
