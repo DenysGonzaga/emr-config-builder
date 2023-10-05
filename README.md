@@ -4,7 +4,7 @@ An easy manner to generate Apache Spark optimized AWS EMR cluster configurations
 
 Service created using Python, Poetry, and AWS CDK.
 
-All variable calculations are based on this AWS [tutorial](https://aws.amazon.com/pt/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/). 
+All configuration calculations are based on this AWS [tutorial](https://aws.github.io/aws-emr-best-practices/). 
 
 
 ## Requirements
@@ -24,11 +24,24 @@ aws configure
 ```
 Do you don't know how to configure AWS CLI Environment? Check [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html).
 
+## Design
+![image](./assets/design/emr_config_builder.png)
+
+## Configuration
+
+You can change event trigger for spider function performing some adjustments over cdk.json file.
+
+![image](./assets/cdk-variables.png)
+
+    spider_cron_expression_schedule = whether want a different cron expression 
+    enable_spider_scheduler = enable or disable event to trigger spider lambda 
+
 ## Deploy
 
 Deploy using cdk with poetry.
 ```
 cd infra
+poetry update
 poetry run cdk synth
 poetry run cdk deploy
 ```
@@ -38,9 +51,6 @@ After deploy, you can wait `spider_lambda` runs (event bridge schedule), trigger
 ![image](./assets/request-example2.png)
 
 This first step is necessary to feed the dynamodb table with instance informations.
-
-## Design
-![image](./assets/design/emr_config_builder.png)
 
 ## How to Request 
 
@@ -116,12 +126,18 @@ All parameters:
 
 You can face some scenarios when need to add a new configuration instance, following below how can do that.
 
-If don't want a update from spider for those itens, create a custom config changing `instance.type` param value. 
+Tip: If don't want to update from spider for those itens, create a custom config changing `instance.type` param value. 
 
 ![image](./assets/request-example3.png)
 
 All parameters are required.
 
-When update or insert a dynamodb item a flag is added to prevent update from spider lambda.
+When update or insert a dynamodb item a flag is added to prevent update from spider lambda on the next execution.
 
 ![image](./assets/dynamodb-record1.png)
+
+## Monitoring
+
+Both lambdas has CloudWatch Logs and X-Ray outputs.
+
+![image](./assets/xray-spider-output.png)

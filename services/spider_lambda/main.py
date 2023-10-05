@@ -7,6 +7,10 @@ import logging
 import functools as fn
 from datetime import datetime as dt
 from bs4 import BeautifulSoup
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.core import patch_all
+
+xray_recorder.configure(service='Emr-Config-Builder-Service')
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -33,6 +37,7 @@ def default_response(body, statusCode=200):
 
 
 def handler(event, context):
+    patch_all()
     try:
         logger.info(
             "Crawling YARN data from AWS source ({})".format(yarn_data_url))
