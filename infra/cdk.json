@@ -15,6 +15,8 @@
     ]
   },
   "context": {
+    "spider_cron_expression_schedule": "0 5 * * ? *",
+    "enable_spider_scheduler": true,
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,
     "@aws-cdk/core:target-partitions": [

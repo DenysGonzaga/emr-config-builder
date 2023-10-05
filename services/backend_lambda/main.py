@@ -2,6 +2,10 @@ import os
 import json
 import boto3
 import logging
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.core import patch_all
+
+xray_recorder.configure(service='Emr-Config-Builder-Service')
 
 dynamodb = boto3.resource('dynamodb')
 table_name = os.environ['DYN_TABLE_NAME']
@@ -257,6 +261,7 @@ def get_handler(data):
 
 
 def handler(event, context):
+    patch_all()
     try:
         httpMethod = event.get('httpMethod')
         response_data = {}

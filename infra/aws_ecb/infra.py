@@ -44,6 +44,7 @@ class EmrConfigBuilder(Stack):
                                 function_name="ecb_instance_spider",
                                 memory_size=256,
                                 timeout=Duration.minutes(3),
+                                tracing=lambda_.Tracing.ACTIVE,
                                 code=lambda_.DockerImageCode.from_image_asset("../services/spider_lambda"),
                                 environment={
                                     "YARN_DATA_URL": "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-hadoop-task-config.html",
@@ -56,7 +57,7 @@ class EmrConfigBuilder(Stack):
         self.spider_function.add_to_role_policy(iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=[
-                    "dynamodb:BatchWriteItem"
+                    "dynamodb:PutItem"
                 ],
                 resources=[
                     f"arn:aws:dynamodb:{self.region}:{self.account}:table/{self.metadata_table.table_name}",
@@ -67,6 +68,7 @@ class EmrConfigBuilder(Stack):
         self.backend_lambda =  lambda_.DockerImageFunction(self, "ECBBackendLambda",
                                         function_name="ecb_backend_lambda",
                                         memory_size=128,
+                                        tracing=lambda_.Tracing.ACTIVE,
                                         code=lambda_.DockerImageCode.from_image_asset("../services/backend_lambda"),
                                         environment={
                                             "DYN_TABLE_NAME": self.metadata_table.table_name,
@@ -113,7 +115,11 @@ class EmrConfigBuilder(Stack):
 
     def build_rules(self):
         # Create CRON Rules to update metadata periodically
-        self.spider_cron_rule = events.Rule(self, 'ECBSpiderCronRule',
-                                            schedule= events.Schedule.expression("cron(0 5 * * ? *)"))
-        self.spider_cron_rule.add_target(targets.LambdaFunction(self.spider_function, retry_attempts=2))
-        self.spider_cron_rule.apply_removal_policy(RemovalPolicy.DESTROY)
+        cron_expression = self.node.try_get_context("spider_cron_expression_schedule")
+        enable_rule = self.node.try_get_context("enable_spider_scheduler")
+
+        if enable_rule:
+            self.spider_cron_rule = events.Rule(self, 'ECBSpiderCronRule',
+                                                schedule= events.Schedule.expression("cron(0 5 * * ? *)"))
+            self.spider_cron_rule.add_target(targets.LambdaFunction(self.spider_function, retry_attempts=2))
+            self.spider_cron_rule.apply_removal_policy(RemovalPolicy.DESTROY)
