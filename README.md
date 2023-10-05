@@ -18,11 +18,11 @@ All variable calculations are based on this AWS [tutorial](https://aws.amazon.co
 | AWS cli         | 2.13.3      |
 
 
-Setup you AWS CLI environment.
+Setup AWS CLI environment.
 ```
 aws configure
 ```
-Do you don't know how to configure your AWS CLI Environment? Check [here](https://aws.github.io/aws-emr-best-practices/).
+Do you don't know how to configure AWS CLI Environment? Check [here](https://aws.github.io/aws-emr-best-practices/).
 
 ## Deploy
 
@@ -108,15 +108,15 @@ All parameters:
     master_yarn_cores (optional:int): Yarn cores availables to master for selected instance type.
     node_yarn_cores (optional:int): Yarn cores availables to node for selected instance type.
     cores_by_executor (optional:int): Cores for spark executor. (Spark configuration) 
-    set_python3 (optional:bool): if you want use python3.
-    set_spark_glue_catalog (optional:bool): if you want use integrated glue catalog.
-    set_hive_glue_catalog (optional:bool): if you want use hive catalog.
+    set_python3 (optional:bool): if want use python3.
+    set_spark_glue_catalog (optional:bool): if want use integrated glue catalog.
+    set_hive_glue_catalog (optional:bool): if want use hive catalog.
 
 ## Update or insert a new instance data
 
-You can face some scenarios when need to add a new configuration instance, following below how you can do that.
+You can face some scenarios when need to add a new configuration instance, following below how can do that.
 
-If you don't want a update from spider for those itens, create a custom config changing `instance.type` param value. 
+If don't want a update from spider for those itens, create a custom config changing `instance.type` param value. 
 
 ![image](./assets/request-example3.png)
 
