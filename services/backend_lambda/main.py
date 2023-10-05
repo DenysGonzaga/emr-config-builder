@@ -2,11 +2,10 @@ import os
 import json
 import boto3
 import logging
-from datetime import datetime as dt
 
 dynamodb = boto3.resource('dynamodb')
 table_name = os.environ['DYN_TABLE_NAME']
-spider_lambda_name = os.environ['SPI_LBMDA_NAME']
+spider_lambda_name =  os.environ['SPI_LBMDA_NAME']
 
 table = dynamodb.Table(table_name)
 
@@ -67,7 +66,7 @@ def post_handler(data):
             return default_response({"error": m}, 500)
 
         logger.info("Spider trigger activated.")
-        return default_response({"response": "Spide trigger activated."})
+        return default_response({"response": "Spider trigger activated."})
     else:
         logger.info("Database upsert mode.")
         instance_type = data.get('instance.type')
@@ -101,12 +100,11 @@ def post_handler(data):
         except:
             return default_response({"response": "Parameter 'yarn.cores' must be integer."}, 400)
 
-        processed_dt = int((dt.now() - dt(1970,1,1)).total_seconds())
         setOrUpdate_dbitem({
             "category": "instance_data",
             "key": instance_type,
             "value": rvalue,
-            "processed_dt": processed_dt            
+            "updated": True            
         })
 
         return default_response({"response": "Database item upserted."})
@@ -127,16 +125,16 @@ def get_handler(data):
     # Basic Data Validations
     logger.info("Performing basic validations.")
     if master_instance is None or node_instance is None:
-        return {"response": "Master (master_instance) and Node (node_instance) query string parameters must be supplied."}
+        return default_response({"response": "Master (master_instance) and Node (node_instance) query string parameters must be supplied."})
 
     master_instance = get_dbitem(master_instance)['value']
     node_instance = get_dbitem(node_instance)['value']
 
     if master_instance is None:
-        return {"response": "Master (master_instance) not found."}
+        return default_response({"response": f"Master (master_instance = '{master_instance}') not found."}, 400)
 
     if node_instance is None:
-        return default_response({"response": "(node_instance) not found."}, 400)
+        return default_response({"response": f"(node_instance  = '{node_instance}') not found."}, 400)
     
     if master_instance.get('yarn.cores') is not None:
         master_yarn_cores = master_instance.get('yarn.cores')
@@ -152,7 +150,7 @@ def get_handler(data):
     if node_instance.get('yarn.cores') is None and \
             node_yarn_cores is None:
         return default_response({"response": "Node yarn.cores at database is null, please change "
-                                "instance type or set node_yarn_cores parameter on your request."}, 400)
+                                "instance type or set node_yarn_cores parameter on request."}, 400)
 
     # Consistency validations
     logger.info("Performing consistency validations.")
@@ -260,17 +258,18 @@ def get_handler(data):
 
 def handler(event, context):
     try:
-        logger.info("Request processing begun.")
         httpMethod = event.get('httpMethod')
         response_data = {}
 
         if httpMethod == 'POST':
            response_data = post_handler(json.loads(event.get('body')))
         elif httpMethod == 'GET':
-           response_data = get_handler(event.get('queryStringParameters'))
+           qryParams = event.get('queryStringParameters')
+           if qryParams is None:
+               return default_response({"response": "Query string parameters are required."}, 400)
 
-        logger.info("Request processing ended. Preparing response")
+           response_data = get_handler(qryParams)
         return response_data
     except Exception as e:
         logger.error(str(e))
-        return default_response({"error": str(e)}, 500)
+        return default_response({"error": str(e), "event": event}, 500)

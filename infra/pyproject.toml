@@ -1,14 +1,14 @@
 [tool.poetry]
 name = "emr-config-builder-infra"
-version = "0.0.1"
-description = "IaC for EMR config Build"
+version = "0.1.041023"
+description = "CDK code to create all necessary services"
 authors = ["Denys Gonzaga <denys.gonzaga@proton.me>"]
 license = "MIT"
+readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
-aws-cdk-lib = "2.72.1"
-pytest = "6.2.5"
+python = "^3.8"
+aws-cdk-lib = "^2.99.1"
 
 [build-system]
 requires = ["poetry-core"]

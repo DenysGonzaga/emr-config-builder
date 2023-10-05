@@ -1,6 +1,7 @@
 import os
 import json
 import boto3
+import botocore
 import requests
 import logging
 import functools as fn
@@ -82,11 +83,22 @@ def handler(event, context):
    
         table = dynamodb.Table(table_name)
         processed_dt = int((dt.now() - dt(1970,1,1)).total_seconds())
-        with table.batch_writer() as batch:
-            for k, v in instances.items():
-                batch.put_item(Item={"category": "instance_data",
-                                     "key": k, "value": v,
-                                     "processed_dt": processed_dt})
+        
+        # TODO: improve performance
+        for k, v in instances.items():
+            try:
+                table.put_item(Item={"category": "instance_data",
+                                                "key": k, "value": v},
+                                ConditionExpression='attribute_not_exists(updated)')
+            except botocore.exceptions.ClientError as e:
+                if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
+                    raise
+               
+        #with table.batch_writer() as batch:
+        #    for k, v in instances.items():
+        #        batch.put_item(Item={"category": "instance_data",
+        #                             "key": k, "value": v,
+        #                             "processed_dt": processed_dt})
 
         logger.info("Database updated.")
         default_response({"response": "Database updated."})
