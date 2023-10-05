@@ -22,7 +22,7 @@ Setup AWS CLI environment.
 ```
 aws configure
 ```
-Do you don't know how to configure AWS CLI Environment? Check [here](https://aws.github.io/aws-emr-best-practices/).
+Do you don't know how to configure AWS CLI Environment? Check [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html).
 
 ## Deploy
 
