@@ -40,7 +40,6 @@ After deploy, you can wait `spider_lambda` runs (event bridge schedule), trigger
 This first step is necessary to feed the dynamodb table with instance informations.
 
 ## Design
-
 ![image](./assets/design/emr_config_builder.png)
 
 ## How to Request 
